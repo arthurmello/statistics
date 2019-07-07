@@ -38,3 +38,23 @@ new_house = data.frame(
   sqft_living = 2080, floors = 1, yr_built = 1997
   )
 predict(model3,newdata = new_house)
+
+# Looking at the regression plots
+plot(model3)
+
+# Breusch-Pagan test
+library(lmtest)
+bptest(model3)
+
+# Robust regression
+library(robust)
+model4 = lmRob(price ~ sqft_living + floors + yr_built, data = data)
+summary(model4)
+plot(model4)
+
+# Multicolinearity
+library(car)
+vif(model3)
+
+# AIC
+AIC(model1, model2, model3)
