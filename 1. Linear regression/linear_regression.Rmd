@@ -1,14 +1,10 @@
 ---
 title: "Linear regression tutorial"
-output: html_notebook
-author: Arthur Mello
+author: "Arthur Mello"
+output:
+  html_document:
+    df_print: paged
 ---
-
-```{r include = FALSE}
-# Setting working directory
-library(rstudioapi)
-setwd(dirname(getActiveDocumentContext()$path)) # we set our working directory
-```
 
 Regression techniques help you measure the extent to which variables are related. They allow you to say, for instance, that “for each square meter in a house, it will cost an extra $6,000” (in this case those variables are house area and its price).
 
@@ -97,3 +93,28 @@ predict(model3,newdata = new_house)
 ```
 So, for a house built in 1997, with 2,080 square feet of living space and one floor, we expect it to cost around $ 426,716.
 So we have learned how to create a linear model, how to evaluate and improve it, and how to use it for predictions. There are still many improvement opportunities for our model which we’ll address in our next linear regression tutorial, such as fixing heteroskedasticity (I swear this is still English) and multicolinearity but now we have a basic understanding on how these models work, and how to work with them.
+
+**Digging deeper**
+
+```{r error=TRUE}
+# Looking at the regression plots
+plot(model3)
+
+# Breusch-Pagan test
+library(lmtest)
+bptest(model3)
+
+# Robust regression
+library(robust)
+model4 = lmRob(price ~ sqft_living + floors + yr_built, data = data)
+summary(model4)
+plot(model4)
+
+
+# Multicolinearity
+library(car)
+vif(model3)
+
+# AIC
+AIC(model1, model2, model3)
+```
