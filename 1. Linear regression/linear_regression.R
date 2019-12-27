@@ -36,7 +36,7 @@ summary(model3)
 # Trying a prediction
 new_house = data.frame(
   sqft_living = 2080, floors = 1, yr_built = 1997
-  )
+)
 predict(model3,newdata = new_house)
 
 # Looking at the regression plots
@@ -58,3 +58,54 @@ vif(model3)
 
 # AIC
 AIC(model1, model2, model3)
+
+# Polynomial regression
+data$yr_built_2 = data$yr_built^2
+model5 = lm(price ~ sqft_living + floors + yr_built + yr_built_2 , data = data)
+summary(model5)
+
+# Ridge regression
+library(glmnet)
+library(tidyverse)
+
+y = data$price
+x = data[, names(data) != "price"] %>% data.matrix()
+
+model6 = glmnet(x, y, alpha = 0)
+
+lambdas = 10^seq(10, -10, by = -.2)
+cv_fit = cv.glmnet(x, y, alpha = 0, lambda = lambdas)
+plot(cv_fit)
+
+opt_lambda = cv_fit$lambda.min
+opt_lambda
+
+model6 = cv_fit$glmnet.fit
+plot(model6, xvar = "lambda")
+legend("left", lwd = 1, col = 1:6, legend = colnames(x), cex = .5)
+
+# LASSO regression
+cv_fit = cv.glmnet(x, y, alpha = 1, lambda = lambdas)
+opt_lambda = cv_fit$lambda.min
+
+model7 = cv_fit$glmnet.fit
+plot(model7, xvar = "lambda")
+legend("left", lwd = 1, col = 1:6, legend = colnames(x), cex = .5)
+
+# Elastic net regression
+library(caret)
+set.seed(111)
+model8 = train(
+  price ~., data = data, method = "glmnet",
+  trControl = trainControl("cv", number = 10),
+  tuneLength = 10
+)
+
+model8$bestTune
+
+# Stepwise regression
+library(MASS)
+model8 = lm(price~., data = data)
+model8 = stepAIC(model8, direction = "both", 
+                 trace = FALSE)
+summary(model8)
