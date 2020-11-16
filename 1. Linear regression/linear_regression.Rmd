@@ -1,9 +1,8 @@
 ---
 title: "Linear regression tutorial"
 author: "Arthur Mello"
-output:
-  html_document:
-    df_print: paged
+output: html_document
+df_print: paged
 ---
 
 Regression techniques help you measure the extent to which variables are related. They allow you to say, for instance, that “for each square meter in a house, it will cost an extra $6,000” (in this case those variables are house area and its price).
