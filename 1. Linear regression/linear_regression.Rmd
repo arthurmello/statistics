@@ -1,0 +1,174 @@
+---
+title: "Linear regression tutorial"
+author: "Arthur Mello"
+output: html_document
+df_print: paged
+---
+
+Regression techniques help you measure the extent to which variables are related. They allow you to say, for instance, that “for each square meter in a house, it will cost an extra $6,000” (in this case those variables are house area and its price).
+
+A linear regression is the type of regression we do when that relationship is linear. In our example, it is probably the case: extra squared meters will always add more or less the same to the house price. Now let’s think of house price per number of bathrooms: although adding a second bathroom to your house will increase a its house price, it is very unlikely that the 12th bathroom will make much difference to a house that already has 11 of them.
+
+In regression techniques we always have our target numeric variable (Y) and our explanatory variables (X1, X2, …. ). In this case, since we are trying to explain house price, that’s our Y. In the first example, our X was the house area and, in the second one, its number of bathrooms. We also might have multiple X (for instance, if we take area, number of bathrooms and year of the last renovation).
+Now let’s do our first regression, using R. We will work on a public dataset with data from house sales in King County, USA, available [here](https://www.kaggle.com/harlfoxem/housesalesprediction/downloads/housesalesprediction.zip/1). We can then load it, and take a look at the variables:
+
+
+```{r}
+# Loading our data
+data = read.csv('data/kc_house_data.csv')
+
+# Taking a look at the column names
+colnames(data)
+```
+
+So here we have *price* and *sqft_living* (the living area in square feet). Let’s take a look at these two variables behave together:
+
+
+```{r}
+# Attaching it means we can access column names directly, without referring to the data frame
+attach(data)
+
+# Plotting price against house area
+plot(sqft_living, price)
+```
+Here we have a scatterplot, where each dot represents a house, with its area in the X axis and its price in the Y axis. As expected, it looks like the bigger the house, the more expensive it is. Also, that relationship looks more or less linear. Our first linear regression equation will look like this:
+
+Y = a + b*X
+
+where **Y** is the house price (price), **X** is its area (sqft_living), **a** is a baseline value, a minimum price for a house, no matter how small it is, and **b** is the coefficient that explains the relationship between the two variables (“for each square meter in a house, it will cost an extra $**b**”).
+Let’s build our first linear model:
+
+```{r}
+# Creating our first model using these two variables, and analysing it
+model1 = lm(price ~ sqft_living, data = data)
+summary(model1)
+```
+
+
+The lm() function is what allows us to build the model, whereas the summary() function allows us to see what the model yields. Now let’s try to interpret those results:
+
+**Residuals**: it shows the distribution of the residuals, which are the differences between the prices estimated by the model and the actual observed prices. Obviously, we want our estimations to be as close as possible to the real values, which means really small residuals. Ideally, they would be very close to zero, and symmetrically distributed.
+
+**Coefficients**: the field “Estimate” gives us the a and the b from our model, where “intercept” is the a and “sqft_living” is the b (in our example, each square foot of living area means an extra $ 280 in the house price). The other relevant field is “Pr(>|t|)”, which gives us the respective p-values. Roughly speaking, the p-value means how confident we can be about the coefficients estimated. A p-value of 5% means we have 95% confidence in our results. Therefore, the smaller the p-value, the better. Usually, if it’s smaller than 5% or 1%, it’s satisfactory. In our example, the p-values are much smaller than that, so we can consider our coefficients as significant.
+
+**R-squared**: it tells us how much of the variation of the target variable (price) is explained by our model, from 0 to 1. Obviously, the more the better. There’s a caveat, however: when we consider more than one explanatory variable, we should look at the adjusted r-squared. In our example, it’s around 0.49, meaning that our model explains roughly half of the variance in house prices.
+Let’s look at the line produced by this model:
+
+
+```{r}
+# Adding the regression line to our plot
+plot(sqft_living, price)
+abline(model1)
+```
+
+
+That line shows, for any given house area, its estimated price according to our model. It doesn’t look very impressive, right? Now that we know how to read our model summary, let’s try to improve it. We can try adding more variables, like the number of bathrooms, for example:
+
+
+```{r}
+# Trying a second model
+model2 = lm(price ~ sqft_living + bathrooms, data = data)
+summary(model2)
+```
+
+
+As we can see, the adjusted R-squared remains virtually the same and the p-value for the bathrooms coefficient is too big, meaning that this variable doesn’t seem significant to explain house prices. Let’s then try a third model, removing bathrooms, and adding other variables that might be relevant:
+
+```{r}
+# Our final model
+model3 = lm(price ~ sqft_living + floors + yr_built, data = data)
+summary(model3)
+```
+This time, we improved our adjusted R-squared to 0.53 and all of our coefficients are relevant. Notice that the coefficient for sqft_living has changed: it is now around 294. The coefficient for yr_built is also interesting to look at, since it’s negative. This means that the bigger the value for yr_built that is, the newer the house, the less it costs. In other words, older houses tend to be more expensive.
+Ok, so what’s next? How can we use this model? Well, we can use it to estimate the sale price for a new house, that is not in our database:
+
+
+```{r}
+# Trying a prediction
+new_house = data.frame(
+  sqft_living = 2080, floors = 1, yr_built = 1997
+  )
+predict(model3,newdata = new_house)
+```
+So, for a house built in 1997, with 2,080 square feet of living space and one floor, we expect it to cost around $ 426,716.
+So we have learned how to create a linear model, how to evaluate and improve it, and how to use it for predictions. There are still many improvement opportunities for our model which we’ll address in our next linear regression tutorial, such as fixing heteroskedasticity (I swear this is still English) and multicolinearity but now we have a basic understanding on how these models work, and how to work with them.
+
+**Digging deeper**
+
+```{r error=TRUE}
+# Looking at the regression plots
+plot(model3)
+
+# Breusch-Pagan test
+library(lmtest)
+bptest(model3)
+
+# Robust regression
+library(robust)
+model4 = lmRob(price ~ sqft_living + floors + yr_built, data = data)
+summary(model4)
+plot(model4)
+
+
+# Multicolinearity
+library(car)
+vif(model3)
+
+# AIC
+AIC(model1, model2, model3)
+```
+
+**The final frontier**
+
+```{r message=FALSE}
+# Polynomial regression
+data$yr_built_2 = data$yr_built^2
+model5 = lm(price ~ sqft_living + floors + yr_built + yr_built_2 , data = data)
+summary(model5)
+
+# Ridge regression
+library(glmnet)
+library(tidyverse)
+
+y = data$price
+x = data[, names(data) != "price"] %>% data.matrix()
+
+model6 = glmnet(x, y, alpha = 0)
+
+lambdas = 10^seq(10, -10, by = -.2)
+cv_fit = cv.glmnet(x, y, alpha = 0, lambda = lambdas)
+plot(cv_fit)
+
+opt_lambda = cv_fit$lambda.min
+opt_lambda
+
+model6 = cv_fit$glmnet.fit
+plot(model6, xvar = "lambda")
+legend("left", lwd = 1, col = 1:6, legend = colnames(x), cex = .5)
+
+# LASSO regression
+cv_fit = cv.glmnet(x, y, alpha = 1, lambda = lambdas)
+opt_lambda = cv_fit$lambda.min
+
+model7 = cv_fit$glmnet.fit
+plot(model7, xvar = "lambda")
+legend("left", lwd = 1, col = 1:6, legend = colnames(x), cex = .5)
+
+# Elastic net regression
+library(caret)
+set.seed(111)
+model8 = train(
+  price ~., data = data, method = "glmnet",
+  trControl = trainControl("cv", number = 10),
+  tuneLength = 10
+)
+
+model8$bestTune
+
+# Stepwise regression
+library(MASS)
+model8 = lm(price~., data = data)
+model8 = stepAIC(model8, direction = "both", 
+                      trace = FALSE)
+summary(model8)
+```
